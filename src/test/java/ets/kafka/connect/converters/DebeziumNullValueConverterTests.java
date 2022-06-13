@@ -180,10 +180,9 @@ public class DebeziumNullValueConverterTests {
 
         tsConverter.configure(props);
         tsConverter.converterFor(new BasicColumn("myfield", "db1.table1", "TIMESTAMP"), testRegistration);
-        Date actualResult = (Date) testRegistration.converter.convert(input);
+        Object actualResult = testRegistration.converter.convert(input);
         
-        Assertions.assertThat(testRegistration.fieldSchema.name()).isEqualTo("org.apache.kafka.connect.data.Timestamp");
-        Assertions.assertThat(getFormater(format).format(actualResult)).isEqualTo(expectedResult);
+        Assertions.assertThat(actualResult).isEqualTo(null);
     }
 
     @Test
@@ -199,7 +198,6 @@ public class DebeziumNullValueConverterTests {
         tsConverter.converterFor(new BasicColumn("myfield", "db1.table1", "TIMESTAMP"), testRegistration);
         Object actualResult = testRegistration.converter.convert(input);
         
-        Assertions.assertThat(testRegistration.fieldSchema.name()).isEqualTo("org.apache.kafka.connect.data.Timestamp");
         Assertions.assertThat(actualResult).isEqualTo(null);
     }
 

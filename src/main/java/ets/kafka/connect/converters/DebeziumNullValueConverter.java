@@ -82,65 +82,34 @@ public class DebeziumNullValueConverter
 
         if (schema != null) {
             registration.register(schema, value -> {
+                if (value == null)
+                    return null;
+            
+                java.util.Date convertedValue = null;
                 Exception exception = null;
                 for (String format : inputFormats) {
                     try {
                         DateFormat dateFormat = new SimpleDateFormat(format);
-                        java.util.Date date = dateFormat.parse(value.toString());
-                        if ((date.getTime()) <= 0)
-                            return null;
+                        convertedValue = dateFormat.parse(value.toString());
 
                     } catch (Exception e) {
                         exception = e;
                     }
                 }
 
-                if (exception == null) {
-                    throw new RuntimeException(
-                            "Bug Alert TimestampConverter: if record is null, exception should be provided");
+                if (convertedValue == null) {
+                    if (exception == null) {
+                        throw new RuntimeException(
+                                "Bug Alert TimestampConverter: if record is null, exception should be provided");
+                    }
+                    LOGGER.error("Provided input format are not compatible with data.");
+                    throw new DataException(exception);
                 }
+                if (convertedValue.getTime() <= 0)
+                    return null;
+
                 return value;
             });
         }
-
-        // if (columnTypes.contains(column.typeName())) {
-        // SchemaBuilder schema = Timestamp.builder();
-        // if (alternativeDefaultValue == null)
-        // schema = schema.optional().defaultValue(alternativeDefaultValue);
-        // registration.register(schema, value -> {
-
-        // if (debug) LOGGER.info("Received value{}", value);
-        // value = (value == null || nullEquivalentValues.contains(value.toString())) ?
-        // alternativeDefaultValue
-        // : value.toString();
-        // if (value == null) return null;
-
-        // SourceRecord record = new SourceRecord(null, null, null, 0,
-        // SchemaBuilder.string().schema(),
-        // value);
-
-        // SourceRecord convertedRecord = null;
-        // Exception exception = null;
-        // for (TimestampConverter<SourceRecord> converter : converters) {
-        // try {
-        // convertedRecord = converter.apply(record);
-        // break;
-        // } catch (DataException e) {
-        // exception = e;
-        // }
-        // }
-
-        // if (convertedRecord == null) {
-        // if (exception == null) {
-        // throw new RuntimeException(
-        // "Bug Alert TimestampConverter: if record is null, exception should be
-        // provided");
-        // }
-        // LOGGER.error("Provided input format are not compatible with data.");
-        // throw new DataException(exception);
-        // }
-        // return convertedRecord.value();
-        // });
-        // }
     }
 }
