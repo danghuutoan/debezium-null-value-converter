@@ -3,6 +3,9 @@ package ets.kafka.connect.converters;
 import io.debezium.spi.converter.CustomConverter;
 import io.debezium.spi.converter.RelationalColumn;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -10,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import org.apache.kafka.connect.data.Date;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Timestamp;
 import org.apache.kafka.connect.errors.DataException;
@@ -28,20 +32,20 @@ public class DebeziumNullValueConverter
     private Boolean debug;
     private List<String> columnTypes = new ArrayList<>();
     private List<String> nullEquivalentValues = new ArrayList<>();
+    private Iterable<String> inputFormats = null;
     private static final Logger LOGGER = LoggerFactory
             .getLogger(DebeziumNullValueConverter.class);
 
     @Override
     public void configure(Properties props) {
 
-        Iterable<String> inputFormats = null;
         try {
             inputFormats = Arrays.asList(props.getProperty("input.formats").split(";"));
         } catch (NullPointerException e) {
             throw new ConfigException(
                     "No input datetime format provided");
         }
-        String [] nullEquivalentValuesArray;
+        String[] nullEquivalentValuesArray;
         columnTypes = Arrays.asList(props.getProperty("column.types", "TIMESTAMP").split(";"));
         alternativeDefaultValue = props.getProperty("alternative.default.value", UNIX_START_TIME);
         debug = props.getProperty("debug", "false").equals("true");
@@ -67,42 +71,76 @@ public class DebeziumNullValueConverter
     @Override
     public void converterFor(RelationalColumn column,
             ConverterRegistration<SchemaBuilder> registration) {
-        
-        if (columnTypes.contains(column.typeName())) {
-            SchemaBuilder schema = Timestamp.builder();
-            if (alternativeDefaultValue == null)
-                schema = schema.optional().defaultValue(alternativeDefaultValue);
-            registration.register(schema, value -> {
-                
-                if (debug) LOGGER.info("Received value{}", value);
-                value = (value == null || nullEquivalentValues.contains(value.toString())) ? alternativeDefaultValue
-                        : value.toString();
-                if (value == null) return null;
-                
-                SourceRecord record = new SourceRecord(null, null, null, 0, SchemaBuilder.string().schema(),
-                        value);
 
-                SourceRecord convertedRecord = null;
+        SchemaBuilder schema = null;
+        switch (column.typeName()) {
+            case "TIMESTAMP":
+                schema = Timestamp.builder().optional();
+            case "DATE":
+                schema = Date.builder().optional();
+        }
+
+        if (schema != null) {
+            registration.register(schema, value -> {
                 Exception exception = null;
-                for (TimestampConverter<SourceRecord> converter : converters) {
+                for (String format : inputFormats) {
                     try {
-                        convertedRecord = converter.apply(record);
-                        break;
-                    } catch (DataException e) {
+                        DateFormat dateFormat = new SimpleDateFormat(format);
+                        java.util.Date date = dateFormat.parse(value.toString());
+                        if ((date.getTime()) <= 0)
+                            return null;
+
+                    } catch (Exception e) {
                         exception = e;
                     }
                 }
 
-                if (convertedRecord == null) {
-                    if (exception == null) {
-                        throw new RuntimeException(
-                                "Bug Alert TimestampConverter: if record is null, exception should be provided");
-                    }
-                    LOGGER.error("Provided input format are not compatible with data.");
-                    throw new DataException(exception);
+                if (exception == null) {
+                    throw new RuntimeException(
+                            "Bug Alert TimestampConverter: if record is null, exception should be provided");
                 }
-                return convertedRecord.value();
+                return value;
             });
         }
+
+        // if (columnTypes.contains(column.typeName())) {
+        // SchemaBuilder schema = Timestamp.builder();
+        // if (alternativeDefaultValue == null)
+        // schema = schema.optional().defaultValue(alternativeDefaultValue);
+        // registration.register(schema, value -> {
+
+        // if (debug) LOGGER.info("Received value{}", value);
+        // value = (value == null || nullEquivalentValues.contains(value.toString())) ?
+        // alternativeDefaultValue
+        // : value.toString();
+        // if (value == null) return null;
+
+        // SourceRecord record = new SourceRecord(null, null, null, 0,
+        // SchemaBuilder.string().schema(),
+        // value);
+
+        // SourceRecord convertedRecord = null;
+        // Exception exception = null;
+        // for (TimestampConverter<SourceRecord> converter : converters) {
+        // try {
+        // convertedRecord = converter.apply(record);
+        // break;
+        // } catch (DataException e) {
+        // exception = e;
+        // }
+        // }
+
+        // if (convertedRecord == null) {
+        // if (exception == null) {
+        // throw new RuntimeException(
+        // "Bug Alert TimestampConverter: if record is null, exception should be
+        // provided");
+        // }
+        // LOGGER.error("Provided input format are not compatible with data.");
+        // throw new DataException(exception);
+        // }
+        // return convertedRecord.value();
+        // });
+        // }
     }
 }

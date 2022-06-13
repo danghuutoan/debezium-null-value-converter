@@ -117,20 +117,35 @@ public class DebeziumNullValueConverterTests {
 
     @Test
     public void testShouldHandleTimestampType() throws ParseException {
-        final String input = "2022-05-20T00:35:29Z";
+        final String input = "1970-01-01T00:00:00Z";
         final DebeziumNullValueConverter tsConverter = new DebeziumNullValueConverter();
         final String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
         Properties props = new Properties();
 
         props.put("debug", "true");
-        props.put("input.formats", "yyyy-MM-dd HH:mm:ss.S;yyyy-MM-dd'T'HH:mm:ss'Z'");
+        props.put("input.formats", format);
         tsConverter.configure(props);
         tsConverter.converterFor(new BasicColumn("myfield", "db1.table1", "TIMESTAMP"), testRegistration);
-        Date actualResult = (Date) testRegistration.converter.convert(input);
-        Date expectedResult = getFormater(format).parse(input);
-        Assertions.assertThat(testRegistration.fieldSchema.name()).isEqualTo("org.apache.kafka.connect.data.Timestamp");
-        Assertions.assertThat(actualResult.equals(expectedResult)).isEqualTo(true);
+        Object actualResult = testRegistration.converter.convert(input);
+        Assertions.assertThat(actualResult).isEqualTo(null);
     }
+
+    @Test
+    public void testShouldHandleDateType() throws ParseException {
+        final String input = "1970-01-01T00:00:00Z";
+        final DebeziumNullValueConverter tsConverter = new DebeziumNullValueConverter();
+        final String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
+        Properties props = new Properties();
+
+        props.put("debug", "true");
+        props.put("input.formats", format);
+        tsConverter.configure(props);
+        tsConverter.converterFor(new BasicColumn("myfield", "db1.table1", "DATE"), testRegistration);
+        Object actualResult = testRegistration.converter.convert(input);
+        Assertions.assertThat(actualResult).isEqualTo(null);
+    }
+
+
 
     // @Test
     // public void testShouldHandleMysql0000() {
@@ -188,24 +203,6 @@ public class DebeziumNullValueConverterTests {
         Assertions.assertThat(actualResult).isEqualTo(null);
     }
 
-
-    @Test
-    public void testShouldAllowsConfigureColumnType() throws ParseException {
-        final String input = "2022-05-20T00:35:29Z";
-        final DebeziumNullValueConverter tsConverter = new DebeziumNullValueConverter();
-        final String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
-        Properties props = new Properties();
-
-        props.put("column.types", "randomType");
-        props.put("input.formats", "yyyy-MM-dd HH:mm:ss.S;yyyy-MM-dd'T'HH:mm:ss'Z'");
-        tsConverter.configure(props);
-        tsConverter.converterFor(new BasicColumn("myfield", "db1.table1", "randomType"), testRegistration);
-        Date actualResult = (Date) testRegistration.converter.convert(input);
-        Date expectedResult = getFormater(format).parse(input);
-        Assertions.assertThat(testRegistration.fieldSchema.name())
-                .isEqualTo("org.apache.kafka.connect.data.Timestamp");
-        Assertions.assertThat(actualResult.equals(expectedResult)).isEqualTo(true);
-    }
 
     @Test
     public void testShouldIgoreStringType() throws ParseException {
