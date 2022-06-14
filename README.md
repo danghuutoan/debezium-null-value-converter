@@ -12,11 +12,11 @@ You can either download the `.jar` file from the [releases](https://github.com/d
 ### Basic Configuration
 To configure this converter all you need to do is add the following lines to your connector configuration:
 ```json
-"converters": "timestampConverter",
-"timestampConverter.type": "ets.kafka.connect.converters.DebeziumAllTimestampFieldsToAvroTimestampConverter",
-"timestampConverter.input.formats": "yyyy-MM-dd'T'HH:mm'Z';yyyy-MM-dd HH:mm:ss;yyyy-MM-dd'T'HH:mm:ss'Z'",
-"timestampConverter.alternative.default.value": "null",
-"timestampConverter.null.equivalent.values": "1970-01-01T00:00Z;0000-00-00 00:00:00;1970-01-01T00:00:00Z",
-"timestampConverter.debug": "true",
+"converters": "nullConverter",
+"nullConverter.type": "ets.kafka.connect.converters.DebeziumNullValueConverter",
+"nullConverter.null.equivalent.values": "1970-01-01T00:00Z;0000-00-00 00:00:00;1970-01-01T00:00:00Z;1970-01-01;Thu Jan 01 00:00:00 UTC 1970",
+"nullConverter.debug": "true",
+"nullConverter.column.types": "DATE;TIMESTAMP",
+"nullConverter.input.formats": "yyyy-MM-dd'T'HH:mm'Z';yyyy-MM-dd HH:mm:ss;yyyy-MM-dd'T'HH:mm:ss'Z'",
 ```
 # debezium-timestamp-converter
