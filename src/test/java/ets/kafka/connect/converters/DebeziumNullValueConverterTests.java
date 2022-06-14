@@ -12,6 +12,7 @@ import io.debezium.spi.converter.CustomConverter.ConverterRegistration;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
@@ -129,6 +130,39 @@ public class DebeziumNullValueConverterTests {
         Object actualResult = (Object) testRegistration.converter.convert(zdtWithZoneOffset);
         Assertions.assertThat(actualResult.equals(zdtWithZoneOffset)).isEqualTo(true);
     }
+
+    @Test
+    public void testShouldHandleLocalDateType() throws ParseException {
+
+        final String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
+        DateTimeFormatter formater = DateTimeFormatter.ofPattern(format);
+        LocalDate lDate = LocalDate.parse("2022-05-20T00:35:29Z", formater);
+        final DebeziumNullValueConverter tsConverter = new DebeziumNullValueConverter();
+        Properties props = new Properties();
+        props.put("debug", "true");
+        props.put("input.formats", "yyyy-MM-dd HH:mm:ss.S;yyyy-MM-dd'T'HH:mm:ss'Z'");
+        tsConverter.configure(props);
+        tsConverter.converterFor(new BasicColumn("myfield", "db1.table1", "TIMESTAMP"), testRegistration);
+        Object actualResult = (Object) testRegistration.converter.convert(lDate);
+        Assertions.assertThat(actualResult.equals(lDate)).isEqualTo(true);
+    }
+    
+    @Test
+    public void testShouldReturnNullLocalDateType() throws ParseException {
+
+        final String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
+        DateTimeFormatter formater = DateTimeFormatter.ofPattern(format);
+        LocalDate lDate = LocalDate.parse("1970-01-01T00:00:00Z",formater);
+        final DebeziumNullValueConverter tsConverter = new DebeziumNullValueConverter();
+        Properties props = new Properties();
+        props.put("debug", "true");
+        props.put("input.formats", "yyyy-MM-dd HH:mm:ss.S;yyyy-MM-dd'T'HH:mm:ss'Z'");
+        tsConverter.configure(props);
+        tsConverter.converterFor(new BasicColumn("myfield", "db1.table1", "TIMESTAMP"), testRegistration);
+        Object actualResult = (Object) testRegistration.converter.convert(lDate);
+        Assertions.assertThat(actualResult).isEqualTo(null);
+    }
+
 
     @Test
     public void testShouldReturnNullTimestampType() throws ParseException {

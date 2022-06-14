@@ -6,6 +6,7 @@ import io.debezium.util.BoundedConcurrentHashMap;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,6 +43,8 @@ public class DebeziumNullValueConverter
 
     @Override
     public void configure(Properties props) {
+
+        debug = props.getProperty("debug", "false").equals("true");
         try {
             inputFormats = Arrays.asList(props.getProperty("input.formats").split(";"));
         } catch (NullPointerException e) {
@@ -64,6 +67,7 @@ public class DebeziumNullValueConverter
     private Object doConvert(Object value, SchemaBuilder schema) {
         if (debug)
             LOGGER.info("Received value{}", value);
+
         if (value == null)
             return null;
 
@@ -83,7 +87,10 @@ public class DebeziumNullValueConverter
                 }
             } else if (value instanceof java.util.Date) {
                 convertedValue = Values.convertToDate(schema, value);
-            } else if (value instanceof ZonedDateTime) {
+            } else if (value instanceof LocalDate) {
+                convertedValue = java.sql.Date.valueOf((LocalDate) value);
+            }  
+            else if (value instanceof ZonedDateTime) {
                 convertedValue = java.util.Date.from(((ZonedDateTime) value).toInstant());
             } else {
                 return value;
