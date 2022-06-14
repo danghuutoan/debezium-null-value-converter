@@ -33,10 +33,8 @@ public class DebeziumNullValueConverter
     public static final String UNIX_START_TIME = "1970-01-01 00:00:00";
     public static final String MYSQL_ZERO_DATETIME = "0000-00-00 00:00:00";
     private List<TimestampConverter<SourceRecord>> converters = new ArrayList<>();
-    private String alternativeDefaultValue;
     private Boolean debug;
     private List<String> columnTypes = new ArrayList<>();
-    private List<String> nullEquivalentValues = new ArrayList<>();
     private Iterable<String> inputFormats = null;
     private static final Logger LOGGER = LoggerFactory
             .getLogger(DebeziumNullValueConverter.class);
@@ -50,16 +48,6 @@ public class DebeziumNullValueConverter
             throw new ConfigException(
                     "No input datetime format provided");
         }
-        String[] nullEquivalentValuesArray;
-        columnTypes = Arrays.asList(props.getProperty("column.types", "TIMESTAMP").split(";"));
-        alternativeDefaultValue = props.getProperty("alternative.default.value", UNIX_START_TIME);
-        debug = props.getProperty("debug", "false").equals("true");
-        nullEquivalentValuesArray = props.getProperty("null.equivalent.values", "0000-00-00 00:00:00").split(";");
-        for (int i = 0; i < nullEquivalentValuesArray.length; i++) {
-            nullEquivalentValues.add(nullEquivalentValuesArray[i]);
-        }
-        if (alternativeDefaultValue.equals("null"))
-            alternativeDefaultValue = null;
 
         for (String format : inputFormats) {
             LOGGER.info("configure DebeziumAllTimestampFieldsToAvroTimestampConverter using format {}", format);
