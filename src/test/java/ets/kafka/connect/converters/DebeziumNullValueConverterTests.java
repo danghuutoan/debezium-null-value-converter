@@ -12,6 +12,8 @@ import io.debezium.spi.converter.CustomConverter.ConverterRegistration;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.OptionalInt;
 import java.util.Properties;
@@ -24,7 +26,6 @@ public class DebeziumNullValueConverterTests {
         private final String name;
         private final String dataCollection;
         private final String typeName;
-
 
         public BasicColumn(String name, String dataCollection, String typeName) {
             super();
@@ -117,29 +118,36 @@ public class DebeziumNullValueConverterTests {
 
     @Test
     public void testShouldHandleTimestampType() throws ParseException {
-        // final String input = "2022-05-20T00:35:29Z";
-        final DebeziumNullValueConverter tsConverter = new DebeziumNullValueConverter();
-        final String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
-        Properties props = new Properties();
-        final Date input = getFormater(format).parse("2022-05-20T00:35:29Z");
 
+        ZonedDateTime zdtWithZoneOffset = ZonedDateTime.parse("2022-05-20T00:35:29Z");
+        final DebeziumNullValueConverter tsConverter = new DebeziumNullValueConverter();
+        Properties props = new Properties();
         props.put("debug", "true");
         props.put("input.formats", "yyyy-MM-dd HH:mm:ss.S;yyyy-MM-dd'T'HH:mm:ss'Z'");
         tsConverter.configure(props);
         tsConverter.converterFor(new BasicColumn("myfield", "db1.table1", "TIMESTAMP"), testRegistration);
-        Object actualResult = (Object) testRegistration.converter.convert(input);
-        Assertions.assertThat(actualResult.equals(input)).isEqualTo(true);
+        Object actualResult = (Object) testRegistration.converter.convert(zdtWithZoneOffset);
+        Assertions.assertThat(actualResult.equals(zdtWithZoneOffset)).isEqualTo(true);
     }
 
+    @Test
+    public void testShouldReturnNullTimestampType() throws ParseException {
+
+        ZonedDateTime zdtWithZoneOffset = ZonedDateTime.parse("1970-01-01T00:00:00Z");
+        final DebeziumNullValueConverter tsConverter = new DebeziumNullValueConverter();
+        Properties props = new Properties();
+        props.put("debug", "true");
+        props.put("input.formats", "yyyy-MM-dd HH:mm:ss.S;yyyy-MM-dd'T'HH:mm:ss'Z'");
+        tsConverter.configure(props);
+        tsConverter.converterFor(new BasicColumn("myfield", "db1.table1", "TIMESTAMP"), testRegistration);
+        Object actualResult = (Object) testRegistration.converter.convert(zdtWithZoneOffset);
+        Assertions.assertThat(actualResult).isEqualTo(null);
+    }
 
     @Test
     public void testShouldHandleStringTimestampType() throws ParseException {
-        // final String input = "2022-05-20T00:35:29Z";
         final DebeziumNullValueConverter tsConverter = new DebeziumNullValueConverter();
-        final String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
         Properties props = new Properties();
-        final Date input = getFormater(format).parse("2022-05-20T00:35:29Z");
-
         props.put("debug", "true");
         props.put("input.formats", "yyyy-MM-dd HH:mm:ss.S;yyyy-MM-dd'T'HH:mm:ss'Z'");
         tsConverter.configure(props);
@@ -148,148 +156,112 @@ public class DebeziumNullValueConverterTests {
         Assertions.assertThat(actualResult.equals("2022-05-20T00:35:29Z")).isEqualTo(true);
     }
 
+    @Test
+    public void testShouldReturnNullStringTimestampType() throws ParseException {
+        // final String input = "2022-05-20T00:35:29Z";
+        final DebeziumNullValueConverter tsConverter = new DebeziumNullValueConverter();
+        Properties props = new Properties();
+        props.put("debug", "true");
+        props.put("input.formats", "yyyy-MM-dd HH:mm:ss.S;yyyy-MM-dd'T'HH:mm:ss'Z'");
+        tsConverter.configure(props);
+        tsConverter.converterFor(new BasicColumn("myfield", "db1.table1", "TIMESTAMP"), testRegistration);
+        Object actualResult = (Object) testRegistration.converter.convert("1970-01-01T00:00:00Z");
+        Assertions.assertThat(actualResult).isEqualTo(null);
+    }
 
-    // @Test
-    // public void testShouldHandleMysql0000() {
-    //     final String input = "0000-00-00 00:00:00";
-    //     final DebeziumAllTimestampFieldsToAvroTimestampConverter tsConverter = new DebeziumAllTimestampFieldsToAvroTimestampConverter();
-    //     final String format = "yyyy-MM-dd HH:mm:ss";
-    //     Properties props = new Properties();
-    //     String expectedResult = "2022-01-01 00:00:00";
+    @Test
+    public void testShouldHandleDateType() throws ParseException {
+        // final String input = "2022-05-20T00:35:29Z";
+        final DebeziumNullValueConverter tsConverter = new DebeziumNullValueConverter();
+        Properties props = new Properties();
+        props.put("debug", "true");
+        props.put("input.formats", "yyyy-MM-dd HH:mm:ss.S;yyyy-MM-dd'T'HH:mm:ss'Z'");
+        tsConverter.configure(props);
+        tsConverter.converterFor(new BasicColumn("myfield", "db1.table1", "TIMESTAMP"), testRegistration);
+        Object actualResult = (Object) testRegistration.converter.convert("2022-05-20T00:35:29Z");
+        Assertions.assertThat(actualResult.equals("2022-05-20T00:35:29Z")).isEqualTo(true);
+    }
 
-    //     props.put("input.formats", "yyyy-MM-dd HH:mm:ss;yyyy-MM-dd'T'HH:mm:ss'Z'");
-    //     props.put("alternative.default.value", expectedResult);
-        
-    //     tsConverter.configure(props);
-    //     tsConverter.converterFor(new BasicColumn("myfield", "db1.table1", "TIMESTAMP"), testRegistration);
-    //     Date actualResult = (Date) testRegistration.converter.convert(input);
-        
-    //     Assertions.assertThat(testRegistration.fieldSchema.name()).isEqualTo("org.apache.kafka.connect.data.Timestamp");
-    //     Assertions.assertThat(getFormater(format).format(actualResult)).isEqualTo(expectedResult);
-    // }
+    @Test
+    public void testShouldReturnNullDateType() throws ParseException {
+        // final String input = "2022-05-20T00:35:29Z";
+        final DebeziumNullValueConverter tsConverter = new DebeziumNullValueConverter();
+        Properties props = new Properties();
 
+        props.put("debug", "true");
+        props.put("input.formats", "yyyy-MM-dd HH:mm:ss.S;yyyy-MM-dd'T'HH:mm:ss'Z'");
+        tsConverter.configure(props);
+        tsConverter.converterFor(new BasicColumn("myfield", "db1.table1", "TIMESTAMP"), testRegistration);
+        Object actualResult = (Object) testRegistration.converter.convert("1970-01-01T00:00:00Z");
+        Assertions.assertThat(actualResult).isEqualTo(null);
+    }
 
-    // @Test
-    // public void testShouldHandleNullValue() {
-    //     final String input = null;
-    //     final DebeziumNullValueConverter tsConverter = new DebeziumNullValueConverter();
-    //     final String format = "yyyy-MM-dd HH:mm:ss";
-    //     String expectedResult = "2022-01-01 00:00:00";
+    @Test
+    public void testShouldIgoreStringType() throws ParseException {
+        final DebeziumNullValueConverter tsConverter = new DebeziumNullValueConverter();
+        final String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
+        Properties props = new Properties();
 
-    //     Properties props = new Properties();
-    //     props.put("input.formats", "yyyy-MM-dd HH:mm:ss;yyyy-MM-dd'T'HH:mm:ss'Z'");
-    //     props.put("alternative.default.value", expectedResult);
+        props.put("input.formats", "yyyy-MM-dd HH:mm:ss.S;yyyy-MM-dd'T'HH:mm:ss'Z'");
+        props.put("debug", "true");
+        props.put("format", format);
+        tsConverter.configure(props);
+        tsConverter.converterFor(new BasicColumn("myfield", "db1.table1", "String"), testRegistration);
+        Assertions.assertThat(testRegistration.converter == null).isEqualTo(true);
+    }
 
-    //     tsConverter.configure(props);
-    //     tsConverter.converterFor(new BasicColumn("myfield", "db1.table1", "TIMESTAMP"), testRegistration);
-    //     Date actualResult = (Date) testRegistration.converter.convert(input);
-        
-    //     Assertions.assertThat(testRegistration.fieldSchema.name()).isEqualTo("org.apache.kafka.connect.data.Timestamp");
-    //     Assertions.assertThat(getFormater(format).format(actualResult)).isEqualTo(expectedResult);
-    // }
+    @Test(expected = DataException.class)
+    public void testInvalidDatetimeFormat() {
+        final String input = "2022-05-20T00:35:29Z";
+        final DebeziumNullValueConverter tsConverter = new DebeziumNullValueConverter();
+        final String format = "yyyy-MM-dd'T'HH:mm:xys'Z'";
+        Properties props = new Properties();
+        props.put("format", format);
+        props.put("debug", "true");
+        props.put("input.formats", "yyyy-MM-dd HH:mm:ss.S;yyyy-MM-dd'T'HH:mm:ss.SS'Z'");
+        tsConverter.configure(props);
+        tsConverter.converterFor(new BasicColumn("myfield", "db1.table1", "TIMESTAMP"), testRegistration);
+        testRegistration.converter.convert(input);
+    }
 
-    // @Test
-    // public void testShouldHandleDefaultNullValue() {
-    //     final String input = null;
-    //     final DebeziumNullValueConverter tsConverter = new DebeziumNullValueConverter();
+    @Test
+    public void shouldHandleMultiDatetimeFormat() {
+        final String input = "2022-05-20T00:35:29Z";
+        final DebeziumNullValueConverter tsConverter = new DebeziumNullValueConverter();
+        final String format = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
+        Properties props = new Properties();
 
-    //     Properties props = new Properties();
-    //     props.put("input.formats", "yyyy-MM-dd HH:mm:ss;yyyy-MM-dd'T'HH:mm:ss'Z'");
-    //     props.put("alternative.default.value", "null");
+        props.put("input.formats", "yyyy-MM-dd HH:mm:ss.S;yyyy-MM-dd'T'HH:mm:ss'Z'");
+        props.put("format", format);
+        props.put("debug", "true");
+        tsConverter.configure(props);
+        tsConverter.converterFor(new BasicColumn("myfield", "db1.table1", "TIMESTAMP"), testRegistration);
+        testRegistration.converter.convert(input);
+    }
 
-    //     tsConverter.configure(props);
-    //     tsConverter.converterFor(new BasicColumn("myfield", "db1.table1", "TIMESTAMP"), testRegistration);
-    //     Object actualResult = testRegistration.converter.convert(input);
-        
-    //     Assertions.assertThat(testRegistration.fieldSchema.name()).isEqualTo("org.apache.kafka.connect.data.Timestamp");
-    //     Assertions.assertThat(actualResult).isEqualTo(null);
-    // }
+    @Test(expected = ConfigException.class)
+    public void shouldHaveCompatibleSimpleDateFormat() {
+        final String input = "2022-05-20T00:35:29Z";
+        final DebeziumNullValueConverter tsConverter = new DebeziumNullValueConverter();
+        final String uncompatibleSimpleDateformat = "anUncompatibleFormat";
+        Properties props = new Properties();
 
+        props.put("input.formats", uncompatibleSimpleDateformat);
+        tsConverter.configure(props);
+        tsConverter.converterFor(new BasicColumn("myfield", "db1.table1", "TIMESTAMP"), testRegistration);
+        testRegistration.converter.convert(input);
+    }
 
-    // @Test
-    // public void testShouldAllowsConfigureColumnType() throws ParseException {
-    //     final String input = "2022-05-20T00:35:29Z";
-    //     final DebeziumNullValueConverter tsConverter = new DebeziumNullValueConverter();
-    //     final String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
-    //     Properties props = new Properties();
-
-    //     props.put("column.types", "randomType");
-    //     props.put("input.formats", "yyyy-MM-dd HH:mm:ss.S;yyyy-MM-dd'T'HH:mm:ss'Z'");
-    //     tsConverter.configure(props);
-    //     tsConverter.converterFor(new BasicColumn("myfield", "db1.table1", "randomType"), testRegistration);
-    //     Date actualResult = (Date) testRegistration.converter.convert(input);
-    //     Date expectedResult = getFormater(format).parse(input);
-    //     Assertions.assertThat(testRegistration.fieldSchema.name())
-    //             .isEqualTo("org.apache.kafka.connect.data.Timestamp");
-    //     Assertions.assertThat(actualResult.equals(expectedResult)).isEqualTo(true);
-    // }
-
-    // @Test
-    // public void testShouldIgoreStringType() throws ParseException {
-    //     final DebeziumNullValueConverter tsConverter = new DebeziumNullValueConverter();
-    //     final String format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
-    //     Properties props = new Properties();
-
-    //     props.put("input.formats", "yyyy-MM-dd HH:mm:ss.S;yyyy-MM-dd'T'HH:mm:ss'Z'");
-    //     props.put("debug", "true");
-    //     props.put("format", format);
-    //     tsConverter.configure(props);
-    //     tsConverter.converterFor(new BasicColumn("myfield", "db1.table1", "String"), testRegistration);
-    //     Assertions.assertThat(testRegistration.converter ==null).isEqualTo(true);
-    // }
-
-    // @Test(expected = DataException.class)
-    // public void testInvalidDatetimeFormat(){
-    //     final String input = "2022-05-20T00:35:29Z";
-    //     final DebeziumNullValueConverter tsConverter = new DebeziumNullValueConverter();
-    //     final String format = "yyyy-MM-dd'T'HH:mm:xys'Z'";
-    //     Properties props = new Properties();
-    //     props.put("format", format);
-    //     props.put("debug", "true");
-    //     props.put("input.formats", "yyyy-MM-dd HH:mm:ss.S;yyyy-MM-dd'T'HH:mm:ss.SS'Z'");
-    //     tsConverter.configure(props);
-    //     tsConverter.converterFor(new BasicColumn("myfield", "db1.table1", "TIMESTAMP"), testRegistration);
-    //     testRegistration.converter.convert(input);
-    // }
-
-    // @Test
-    // public void shouldHandleMultiDatetimeFormat() {
-    //     final String input = "2022-05-20T00:35:29Z";
-    //     final DebeziumNullValueConverter tsConverter = new DebeziumNullValueConverter();
-    //     final String format = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
-    //     Properties props = new Properties();
-
-    //     props.put("input.formats", "yyyy-MM-dd HH:mm:ss.S;yyyy-MM-dd'T'HH:mm:ss'Z'");
-    //     props.put("format", format);
-    //     props.put("debug", "true");
-    //     tsConverter.configure(props);
-    //     tsConverter.converterFor(new BasicColumn("myfield", "db1.table1", "TIMESTAMP"), testRegistration);
-    //     testRegistration.converter.convert(input);
-    // }
-
-    // @Test(expected = ConfigException.class)
-    // public void shouldHaveCompatibleSimpleDateFormat() {
-    //     final String input = "2022-05-20T00:35:29Z";
-    //     final DebeziumNullValueConverter tsConverter = new DebeziumNullValueConverter();
-    //     final String uncompatibleSimpleDateformat = "anUncompatibleFormat";
-    //     Properties props = new Properties();
-
-    //     props.put("input.formats", uncompatibleSimpleDateformat);
-    //     tsConverter.configure(props);
-    //     tsConverter.converterFor(new BasicColumn("myfield", "db1.table1", "TIMESTAMP"), testRegistration);
-    //     testRegistration.converter.convert(input);
-    // }
-
-    // @Test(expected = ConfigException.class)
-    // public void shouldHaveFormatConfig(){
-    //     final DebeziumNullValueConverter tsConverter = new DebeziumNullValueConverter();
-    //     final String input = "2022-05-20T00:35:29Z";
-    //     Properties props = new Properties();
-    //     props.put("debug", "true");
-    //     tsConverter.configure(props);
-    //     tsConverter.converterFor(new BasicColumn("myfield", "db1.table1", "TIMESTAMP"), testRegistration);
-    //     testRegistration.converter.convert(input);
-    // }
+    @Test(expected = ConfigException.class)
+    public void shouldHaveFormatConfig() {
+        final DebeziumNullValueConverter tsConverter = new DebeziumNullValueConverter();
+        final String input = "2022-05-20T00:35:29Z";
+        Properties props = new Properties();
+        props.put("debug", "true");
+        tsConverter.configure(props);
+        tsConverter.converterFor(new BasicColumn("myfield", "db1.table1", "TIMESTAMP"), testRegistration);
+        testRegistration.converter.convert(input);
+    }
 
     SimpleDateFormat getFormater(String parttern) {
         SimpleDateFormat simpleDatetimeFormatter = new SimpleDateFormat(parttern);
