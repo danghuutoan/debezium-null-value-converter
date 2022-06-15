@@ -7,6 +7,7 @@ import io.debezium.util.BoundedConcurrentHashMap;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -89,8 +90,9 @@ public class DebeziumNullValueConverter
                 convertedValue = Values.convertToDate(schema, value);
             } else if (value instanceof LocalDate) {
                 convertedValue = java.sql.Date.valueOf((LocalDate) value);
-            }  
-            else if (value instanceof ZonedDateTime) {
+                java.util.Date.from(((LocalDate) value).atStartOfDay().atZone(ZoneId.systemDefault()).toInstant());
+                value = convertedValue;
+            } else if (value instanceof ZonedDateTime) {
                 convertedValue = java.util.Date.from(((ZonedDateTime) value).toInstant());
             } else {
                 return value;
