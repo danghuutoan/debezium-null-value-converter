@@ -89,6 +89,7 @@ public class DebeziumNullValueConverter
                 convertedValue = Values.convertToDate(schema, value);
             } else if (value instanceof LocalDate) {
                 convertedValue = java.sql.Date.valueOf((LocalDate) value);
+                value = convertedValue;
             }  
             else if (value instanceof ZonedDateTime) {
                 convertedValue = java.util.Date.from(((ZonedDateTime) value).toInstant());
@@ -112,7 +113,7 @@ public class DebeziumNullValueConverter
             nullValueCache.put(value, convertedValue);
             return null;
         }
-
+        
         return value;
     }
 
